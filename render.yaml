@@ -3,6 +3,7 @@ services:
   - type: web
     name: skincare-backend
     env: python
+    plan: free
     buildCommand: "pip install -r requirements.txt"
     startCommand: "uvicorn app.main:app --host 0.0.0.0 --port $PORT"
     rootDir: skincare-backend
@@ -24,6 +25,7 @@ services:
   - type: web
     name: skincare-frontend
     env: static
+    plan: free
     buildCommand: "npm install && npm run build"
     staticPublishPath: ./dist
     rootDir: skincare-frontend
@@ -32,9 +34,10 @@ services:
         fromService:
           type: web
           name: skincare-backend
-          property: url
+          property: host
 
 databases:
   - name: skincare-db
     databaseName: skincare_db
-    user: postgres
+    user: skincare_user
+    plan: free
