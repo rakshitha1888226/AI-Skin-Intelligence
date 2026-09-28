@@ -18,8 +18,6 @@ services:
         value: 1440
       - key: GROQ_API_KEY
         sync: false
-      - key: GEMINI_API_KEY
-        sync: false
 
   # Frontend Static Site (Static sites do not use a plan field)
   - type: web
