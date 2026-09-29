@@ -1,6 +1,22 @@
 const rawUrl = import.meta.env.VITE_API_BASE_URL || "http://127.0.0.1:8000";
 const BASE_URL = rawUrl.startsWith("http://") || rawUrl.startsWith("https://") ? rawUrl : `https://${rawUrl}`;
 
+async function customFetch(url, options = {}, retries = 1) {
+  try {
+    const res = await fetch(url, options);
+    return res;
+  } catch (err) {
+    if (retries > 0) {
+      // Retry once after 2.5 seconds in case backend is spinning up from Render cold-start
+      await new Promise((resolve) => setTimeout(resolve, 2500));
+      return customFetch(url, options, retries - 1);
+    }
+    throw new Error(
+      "Unable to connect to backend server. If the backend is waking up on Render (free tier), please wait 15–30 seconds and try again."
+    );
+  }
+}
+
 async function handleResponse(res) {
   if (!res.ok) {
     const body = await res.json().catch(() => ({}));
@@ -16,7 +32,7 @@ async function handleResponse(res) {
 }
 
 export async function signup({ full_name, email, password }) {
-  const res = await fetch(`${BASE_URL}/auth/signup`, {
+  const res = await customFetch(`${BASE_URL}/auth/signup`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({ full_name, email, password, role: "user" }),
@@ -29,7 +45,7 @@ export async function login({ email, password }) {
   form.set("username", email);
   form.set("password", password);
 
-  const res = await fetch(`${BASE_URL}/auth/login`, {
+  const res = await customFetch(`${BASE_URL}/auth/login`, {
     method: "POST",
     headers: { "Content-Type": "application/x-www-form-urlencoded" },
     body: form,
@@ -38,7 +54,7 @@ export async function login({ email, password }) {
 }
 
 export async function getMyProfile(token) {
-  const res = await fetch(`${BASE_URL}/skin-profile/me`, {
+  const res = await customFetch(`${BASE_URL}/skin-profile/me`, {
     headers: { Authorization: `Bearer ${token}` },
   });
   if (res.status === 404) return null;
@@ -46,7 +62,7 @@ export async function getMyProfile(token) {
 }
 
 export async function saveProfile(token, profile) {
-  const res = await fetch(`${BASE_URL}/skin-profile/`, {
+  const res = await customFetch(`${BASE_URL}/skin-profile/`, {
     method: "POST",
     headers: {
       "Content-Type": "application/json",
@@ -58,7 +74,7 @@ export async function saveProfile(token, profile) {
 }
 
 export async function clearScanData(token) {
-  const res = await fetch(`${BASE_URL}/skin-profile/scan`, {
+  const res = await customFetch(`${BASE_URL}/skin-profile/scan`, {
     method: "DELETE",
     headers: { Authorization: `Bearer ${token}` },
   });
@@ -69,7 +85,7 @@ export async function analyzePhoto(token, file) {
   const formData = new FormData();
   formData.append("file", file);
 
-  const res = await fetch(`${BASE_URL}/skin-analysis/upload`, {
+  const res = await customFetch(`${BASE_URL}/skin-analysis/upload`, {
     method: "POST",
     headers: { Authorization: `Bearer ${token}` },
     body: formData,
@@ -78,21 +94,21 @@ export async function analyzePhoto(token, file) {
 }
 
 export async function getRecommendations(token) {
-  const res = await fetch(`${BASE_URL}/products/recommendations`, {
+  const res = await customFetch(`${BASE_URL}/products/recommendations`, {
     headers: { Authorization: `Bearer ${token}` },
   });
   return handleResponse(res);
 }
 
 export async function getWeeklyPlan(token) {
-  const res = await fetch(`${BASE_URL}/skin-profile/weekly-plan`, {
+  const res = await customFetch(`${BASE_URL}/skin-profile/weekly-plan`, {
     headers: { Authorization: `Bearer ${token}` },
   });
   return handleResponse(res);
 }
 
 export async function queryRAGAdvisor({ query, userConcern, userSkinType, apiKey, scanAnalysis, lang }) {
-  const res = await fetch(`${BASE_URL}/rag/query`, {
+  const res = await customFetch(`${BASE_URL}/rag/query`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({
