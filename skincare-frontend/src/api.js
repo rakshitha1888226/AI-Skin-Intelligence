@@ -1,18 +1,32 @@
 const rawUrl = import.meta.env.VITE_API_BASE_URL || "http://127.0.0.1:8000";
-const BASE_URL = rawUrl.startsWith("http://") || rawUrl.startsWith("https://") ? rawUrl : `https://${rawUrl}`;
 
-async function customFetch(url, options = {}, retries = 1) {
+let computedUrl = rawUrl;
+if (typeof window !== "undefined" && window.location.protocol === "https:") {
+  if (computedUrl.startsWith("http://") && !computedUrl.includes("127.0.0.1") && !computedUrl.includes("localhost")) {
+    computedUrl = computedUrl.replace("http://", "https://");
+  }
+}
+if (!computedUrl.startsWith("http://") && !computedUrl.startsWith("https://")) {
+  computedUrl = `https://${computedUrl}`;
+}
+
+const BASE_URL = computedUrl;
+
+console.log("[AI Skin Intelligence API] Base URL:", BASE_URL);
+
+async function customFetch(url, options = {}, retries = 2, delay = 2500) {
   try {
     const res = await fetch(url, options);
     return res;
   } catch (err) {
     if (retries > 0) {
-      // Retry once after 2.5 seconds in case backend is spinning up from Render cold-start
-      await new Promise((resolve) => setTimeout(resolve, 2500));
-      return customFetch(url, options, retries - 1);
+      console.warn(`[API Connection Warning] Fetch failed for ${url}. Server may be waking up. Retrying in ${delay / 1000}s...`);
+      await new Promise((resolve) => setTimeout(resolve, delay));
+      return customFetch(url, options, retries - 1, delay * 1.5);
     }
+    console.error(`[API Connection Error] Failed to reach ${url}:`, err);
     throw new Error(
-      "Unable to connect to backend server. If the backend is waking up on Render (free tier), please wait 15–30 seconds and try again."
+      `Unable to connect to backend server. If the backend is waking up on Render (free tier), please wait 15–30 seconds and try again.`
     );
   }
 }
