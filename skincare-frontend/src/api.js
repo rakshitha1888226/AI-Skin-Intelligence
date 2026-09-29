@@ -1,6 +1,6 @@
 const rawUrl = import.meta.env.VITE_API_BASE_URL || "http://127.0.0.1:8000";
 
-let computedUrl = rawUrl;
+let computedUrl = rawUrl.trim();
 if (typeof window !== "undefined" && window.location.protocol === "https:") {
   if (computedUrl.startsWith("http://") && !computedUrl.includes("127.0.0.1") && !computedUrl.includes("localhost")) {
     computedUrl = computedUrl.replace("http://", "https://");
@@ -10,7 +10,7 @@ if (!computedUrl.startsWith("http://") && !computedUrl.startsWith("https://")) {
   computedUrl = `https://${computedUrl}`;
 }
 
-const BASE_URL = computedUrl;
+const BASE_URL = computedUrl.replace(/\/+$/, "");
 
 console.log("[AI Skin Intelligence API] Base URL:", BASE_URL);
 
