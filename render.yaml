@@ -33,7 +33,7 @@ services:
         fromService:
           type: web
           name: skincare-backend
-          property: url
+          property: host
 
 databases:
   - name: skincare-db
